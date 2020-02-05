@@ -50,6 +50,9 @@ type Client struct {
 	// errs is a channel to pass errors that involve connection,
 	// responses, and requests to and from the TinkerPop server.
 	err chan error
+	// db dictates the model structures to be used when unmarshalling responses
+	// back from a gremlin server.
+	db DatabaseType
 	// request is a buffer for requests to be sent to the TinkerPop server.
 	request chan []byte
 	// results is a buffer for responses with their [ID] and Data.
@@ -75,7 +78,7 @@ func setupClient() *Client {
 }
 
 // Dial returns a working client with the given dialer and configurations.
-func Dial(conn gremconnect.Dialer, cfgs ...ClientConfiguration) (*Client, error) {
+func Dial(conn gremconnect.Dialer, db DatabaseType, cfgs ...ClientConfiguration) (*Client, error) {
 	c := setupClient()
 	c.conn = conn
 	// Go through the configurations to customize the client.
@@ -93,17 +96,17 @@ func Dial(conn gremconnect.Dialer, cfgs ...ClientConfiguration) (*Client, error)
 	}
 
 	// GraphManager should be set because it's after the connection is created.
-	c.GraphManager = manager.NewGraphManager(c.conn, c.logger, c.executeRequest)
+	c.GraphManager = manager.NewGraphManager(c.conn, c.logger, c.executeRequest, db)
 
 	return c, nil
 }
 
 // DialWithWebSocket returns a new client with a websocket dialer
 // and possible client configurations.
-func DialWithWebSocket(host string, cfgs ...ClientConfiguration) (*Client, error) {
+func DialWithWebSocket(host string, db DatabaseType, cfgs ...ClientConfiguration) (*Client, error) {
 	// Create the new client using the Dial function and the
 	// new established connection using a websocket.
-	return Dial(NewWebSocketDialer(host), cfgs...)
+	return Dial(NewWebSocketDialer(host), db, cfgs...)
 }
 
 // SetLogger will switch out the old logger with
@@ -126,4 +129,8 @@ func (c *Client) Address() string {
 // Auth will get the authentication user and pass from the dialer.
 func (c *Client) Auth() (*gremconnect.Auth, error) {
 	return c.conn.Auth()
+}
+
+func (c *Client) Database() DatabaseType {
+	return c.db
 }

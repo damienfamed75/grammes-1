@@ -18,16 +18,36 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package model
+package janus
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/northwesternmutual/grammes/internal/model"
+)
+
+var (
+	_ model.VertexValue = VertexValue{}
+)
 
 // VertexValue contains the 'value' data
 // from the Vertex object.
 type VertexValue struct {
-	ID         ID          `json:"id"`
-	Label      string      `json:"label"`
-	Properties PropertyMap `json:"properties,omitempty"`
+	ValueID    ID          `json:"id"`
+	ValueLabel string      `json:"label"`
+	Props      PropertyMap `json:"properties,omitempty"`
+}
+
+func (v VertexValue) ID() model.ID {
+	return v.ValueID
+}
+
+func (v VertexValue) Label() string {
+	return v.ValueLabel
+}
+
+func (v VertexValue) Properties() model.PropertyMap {
+	return v.Props
 }
 
 // PropertyDetailedValue holds the value
@@ -35,8 +55,8 @@ type VertexValue struct {
 // the whole struct can unmarshal into a string
 // or not. If not then the type is listed.
 type PropertyDetailedValue struct {
-	Value interface{} `json:"@value"`
-	Type  string      `json:"@type,omitempty"`
+	Val  interface{} `json:"@value"`
+	Type string      `json:"@type,omitempty"`
 }
 
 // ValueWrapper will handle storing
@@ -56,5 +76,5 @@ func (w *ValueWrapper) UnmarshalJSON(data []byte) error {
 	}
 
 	w.Partial = true
-	return json.Unmarshal(data, &w.Value)
+	return json.Unmarshal(data, &w.Val)
 }

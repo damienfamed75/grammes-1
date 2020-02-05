@@ -26,20 +26,21 @@ package traversal
 // Signatures:
 // Properties()
 // Properties(...string)
-func (g String) Properties(str ...string) String {
-	if len(str) < 1 {
-		g.AddStep("properties")
-	} else {
-		g = g.append(".properties(\"" + str[0] + "\"")
+func (g String) Properties(str ...interface{}) String {
+	g.AddStep("properties", str...)
+	// if len(str) < 1 {
+	// 	g.AddStep("properties")
+	// } else {
+	// 	g = g.append(".properties(\"" + str[0] + "\"")
 
-		if len(str) > 1 {
-			for _, v := range str[1:] {
-				g = g.append(",\"" + v + "\"")
-			}
-		}
+	// 	if len(str) > 1 {
+	// 		for _, v := range str[1:] {
+	// 			g = g.append(",\"" + v + "\"")
+	// 		}
+	// 	}
 
-		g = g.append(")")
-	}
+	// 	g = g.append(")")
+	// }
 
 	return g
 }

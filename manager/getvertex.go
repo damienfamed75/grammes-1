@@ -24,6 +24,7 @@ import (
 	"strconv"
 
 	"github.com/northwesternmutual/grammes/gremerror"
+	"github.com/northwesternmutual/grammes/internal/common"
 	"github.com/northwesternmutual/grammes/logging"
 	"github.com/northwesternmutual/grammes/model"
 	"github.com/northwesternmutual/grammes/query"
@@ -33,12 +34,14 @@ import (
 type getVertexQueryManager struct {
 	logger             logging.Logger
 	executeStringQuery stringExecutor
+	db                 common.DatabaseType
 }
 
-func newGetVertexQueryManager(logger logging.Logger, executor stringExecutor) *getVertexQueryManager {
+func newGetVertexQueryManager(logger logging.Logger, executor stringExecutor, db common.DatabaseType) *getVertexQueryManager {
 	return &getVertexQueryManager{
 		logger:             logger,
 		executeStringQuery: executor,
+		db:                 db,
 	}
 }
 
@@ -52,12 +55,11 @@ func (c *getVertexQueryManager) VerticesByString(query string) ([]model.Vertex, 
 		return nil, err
 	}
 
-	var vertices model.VertexList
+	var vertices []model.Vertex
 
 	for _, res := range responses {
-		var vertPart model.VertexList
 		// Unmarshal the response into the structs.
-		err = jsonUnmarshal(res, &vertPart)
+		vertPart, err := model.UnmarshalVertexList(c.db, res)
 		if err != nil {
 			c.logger.Error("vertices unmarshal",
 				gremerror.NewUnmarshalError("Vertices", res, err),
@@ -65,12 +67,12 @@ func (c *getVertexQueryManager) VerticesByString(query string) ([]model.Vertex, 
 			return nil, err
 		}
 
-		vertices.Vertices = append(vertices.Vertices, vertPart.Vertices...)
+		vertices = append(vertices, vertPart...)
 	}
 
-	c.logger.Debug("RESPONSE INFO", map[string]interface{}{"FULL LENGTH": len(vertices.Vertices)})
+	c.logger.Debug("RESPONSE INFO", map[string]interface{}{"FULL LENGTH": len(vertices)})
 
-	return vertices.Vertices, nil
+	return vertices, nil
 }
 
 // Vertices will gather any vertices and return them
@@ -111,11 +113,11 @@ func (c *getVertexQueryManager) VertexByID(id int64) (model.Vertex, error) {
 		c.logger.Error("error gathering vertices",
 			gremerror.NewGrammesError("VerticesByID", err),
 		)
-		return nilVertex, err
+		return nil, err
 	}
 
 	if len(vertices) == 0 {
-		return nilVertex, gremerror.NewGrammesError("VertexByID", gremerror.ErrEmptyResponse)
+		return nil, gremerror.NewGrammesError("VertexByID", gremerror.ErrEmptyResponse)
 	}
 	// There should only be one vertex with this unique ID.
 	return vertices[0], nil

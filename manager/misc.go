@@ -21,9 +21,11 @@
 package manager
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/northwesternmutual/grammes/gremerror"
+	"github.com/northwesternmutual/grammes/internal/common"
 	"github.com/northwesternmutual/grammes/logging"
 	"github.com/northwesternmutual/grammes/model"
 	"github.com/northwesternmutual/grammes/query/traversal"
@@ -32,12 +34,14 @@ import (
 type miscQueryManager struct {
 	logger             logging.Logger
 	executeStringQuery stringExecutor
+	db                 common.DatabaseType
 }
 
-func newMiscQueryManager(logger logging.Logger, execute stringExecutor) *miscQueryManager {
+func newMiscQueryManager(logger logging.Logger, execute stringExecutor, db common.DatabaseType) *miscQueryManager {
 	return &miscQueryManager{
 		executeStringQuery: execute,
 		logger:             logger,
+		db:                 db,
 	}
 }
 
@@ -83,12 +87,10 @@ func (m *miscQueryManager) VertexCount() (int64, error) {
 		return 0, err
 	}
 
-	var resultingIDs model.IDList
+	var resultingIDs []model.ID
 
 	for _, res := range responses {
-		var rawIDs model.IDList
-
-		err = jsonUnmarshal(res, &rawIDs)
+		rawIDs, err := model.UnmarshalIDList(m.db, res)
 		if err != nil {
 			m.logger.Error("id unmarshal",
 				gremerror.NewUnmarshalError("VertexCount", res, err),
@@ -96,12 +98,25 @@ func (m *miscQueryManager) VertexCount() (int64, error) {
 			return 0, err
 		}
 
-		resultingIDs.IDs = append(resultingIDs.IDs, rawIDs.IDs...)
+		resultingIDs = append(resultingIDs, rawIDs...)
 	}
 
-	if len(resultingIDs.IDs) == 0 {
+	if len(resultingIDs) == 0 {
 		return 0, gremerror.ErrEmptyResponse
 	}
 
-	return resultingIDs.IDs[0].Value, nil
+	val := resultingIDs[0].Value()
+	result := -1
+	for _, v := range val {
+		if r, ok := v.(int); ok {
+			result = r
+		}
+	}
+
+	// If the result isn't a valid length.
+	if result == -1 {
+		return int64(result), fmt.Errorf("formatting result: %v", val)
+	}
+
+	return int64(result), nil
 }

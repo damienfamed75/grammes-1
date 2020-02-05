@@ -18,7 +18,16 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package model
+package janus
+
+import (
+	"github.com/northwesternmutual/grammes/internal/model"
+)
+
+var (
+	_ model.Property = &Property{}
+	_ model.ID       = PropertyID{}
+)
 
 // Tinkerpop:
 // http://tinkerpop.apache.org/javadocs/3.2.1/core/org/apache/tinkerpop/gremlin/structure/Property.html
@@ -28,7 +37,9 @@ package model
 // to the Gremlin key and the []Property is the value.
 // Properties can have multiple values; this is why we must
 // have it as a slice of Property.
-type PropertyMap map[string][]Property
+type PropertyMap = model.PropertyMap
+
+// type PropertyMap map[interface{}][]model.Property
 
 // Property holds the type and
 // value of the property. It's extra
@@ -39,49 +50,62 @@ type Property struct {
 	Type string `json:"@type"`
 	// Value stores the actual data of the Property.
 	// This would be its Key, Value, and ID.
-	Value PropertyValue `json:"@value"`
+	Val PropertyValue `json:"@value"`
 }
 
 // NewProperty will just shorten the struggle of filling
 // a property struct. This is meant to be used when creating a Vertex struct.
 func NewProperty(label string, value interface{}) Property {
 	return Property{
-		Value: PropertyValue{
+		Val: PropertyValue{
 			Label: label,
-			Value: ValueWrapper{
+			Val: ValueWrapper{
 				PropertyDetailedValue: PropertyDetailedValue{
-					Value: value,
+					Val: value,
 				},
 			},
 		},
 	}
 }
 
-// GetValue is a shortcut for taking the raw interface{}
+// Value is a shortcut for taking the raw interface{}
 // from the property itself without redundancy.
-func (p *Property) GetValue() interface{} {
-	return p.Value.Value.Value
+func (p Property) Value() interface{} {
+	return p.Val.Val.Val
 }
 
-// GetLabel will return the key that is used to find
+// Label will return the key that is used to find
 // this particular property and its value.
-func (p *Property) GetLabel() string {
-	return p.Value.Label
+func (p Property) Label() string {
+	return p.Val.Label
+}
+
+// ID returns the ID object.
+func (p Property) ID() model.ID {
+	return p.Val.ID
 }
 
 // PropertyValue contains the ID,
 // value, and label of this property's value.
 type PropertyValue struct {
 	ID    PropertyID   `json:"id"`
-	Value ValueWrapper `json:"value"`
+	Val   ValueWrapper `json:"value"`
 	Label string       `json:"label"`
 }
 
 // PropertyID holds the ID that is used
 // for the property itself.
 type PropertyID struct {
-	Type  string          `json:"@type"`
-	Value PropertyIDValue `json:"@value"`
+	Type string          `json:"@type"`
+	Val  PropertyIDValue `json:"@value"`
+}
+
+func (p PropertyID) Value() []interface{} {
+	return []interface{}{p.Val.RelationID}
+}
+
+func (p PropertyID) ValueInt() int64 {
+	return -1
 }
 
 // PropertyIDValue holds the value

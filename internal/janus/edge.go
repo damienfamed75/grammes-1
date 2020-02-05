@@ -18,18 +18,28 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package model
+package janus
 
-// EdgeID is the main wrapper struct
-// that holds the type and ID itself.
-type EdgeID struct {
-	Type  string         `json:"@type"`
-	Value EdgeRelationID `json:"@value"`
+import (
+	"github.com/northwesternmutual/grammes/internal/model"
+)
+
+var (
+	_ model.Edge = &Edge{}
+)
+
+// Edge is the object that builds a
+// connection between two or more vertices.
+//
+// Tinkerpop: http://tinkerpop.apache.org/javadocs/3.2.1/core/org/apache/tinkerpop/gremlin/structure/Edge.html
+//
+//  outVertex ---label---> inVertex.
+type Edge struct {
+	EdgeType string `json:"@type"`
+
+	*EdgeValue `json:"@value"`
 }
 
-// EdgeRelationID contains the ID of the
-// edge and its relationship status between
-// vertices.
-type EdgeRelationID struct {
-	RelationID string `json:"relationId"`
+func (e *Edge) Value() model.EdgeValue {
+	return e.EdgeValue
 }

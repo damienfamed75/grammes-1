@@ -18,16 +18,26 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package model
+package janus
 
-// Data holds basic information
-// such as the label, name, ID, and properties
-// of what this is being associated with.
-type Data struct {
-	DBName    string    `json:"dbName"`
-	TableName string    `json:"tableName"`
-	Columns   []DataMap `json:"columns"`
+import (
+	"testing"
+
+	. "github.com/smartystreets/goconvey/convey"
+)
+
+func TestUnmarshalJSON(t *testing.T) {
+	Convey("Given a variable that represents the Edge struct", t, func() {
+
+		vw := ValueWrapper{Partial: true}
+		Convey("When 'UnmarshalJSON' is called with a string", func() {
+			str := `{"@value": "test"}`
+			b := []byte(str)
+			err := vw.UnmarshalJSON(b)
+
+			Convey("Then error should equal nil", func() {
+				So(err, ShouldEqual, nil)
+			})
+		})
+	})
 }
-
-// DataMap is used to store data
-type DataMap map[string]interface{}

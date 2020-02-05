@@ -22,6 +22,7 @@ package manager
 
 import (
 	"github.com/northwesternmutual/grammes/gremconnect"
+	"github.com/northwesternmutual/grammes/internal/common"
 	"github.com/northwesternmutual/grammes/logging"
 )
 
@@ -38,14 +39,14 @@ type GraphQueryManager struct {
 
 // NewGraphManager will give a manager to handle all
 // graph interactions through the TinkerPop server.
-func NewGraphManager(dialer gremconnect.Dialer, logger logging.Logger, executeRequest executor) *GraphQueryManager {
+func NewGraphManager(dialer gremconnect.Dialer, logger logging.Logger, executeRequest executor, db common.DatabaseType) *GraphQueryManager {
 	g := &GraphQueryManager{
 		queryManager: newQueryManager(dialer, logger, executeRequest),
 	}
 
-	g.vertexQueryManager = newVertexQueryManager(logger, g.ExecuteStringQuery)
-	g.miscQueryManager = newMiscQueryManager(logger, g.ExecuteStringQuery)
-	g.schemaManager = newSchemaManager(logger, g.ExecuteStringQuery)
+	g.vertexQueryManager = newVertexQueryManager(logger, g.ExecuteStringQuery, db)
+	g.miscQueryManager = newMiscQueryManager(logger, g.ExecuteStringQuery, db)
+	g.schemaManager = newSchemaManager(logger, g.ExecuteStringQuery, db)
 
 	return g
 }

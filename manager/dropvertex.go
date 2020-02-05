@@ -23,21 +23,24 @@ package manager
 import (
 	"strings"
 
-	"github.com/northwesternmutual/grammes/query/traversal"
 	"github.com/northwesternmutual/grammes/gremerror"
+	"github.com/northwesternmutual/grammes/internal/common"
 	"github.com/northwesternmutual/grammes/logging"
 	"github.com/northwesternmutual/grammes/query"
+	"github.com/northwesternmutual/grammes/query/traversal"
 )
 
 type dropQueryManager struct {
 	logger             logging.Logger
 	executeStringQuery stringExecutor
+	db                 common.DatabaseType
 }
 
-func newDropQueryManager(logger logging.Logger, executor stringExecutor) *dropQueryManager {
+func newDropQueryManager(logger logging.Logger, executor stringExecutor, db common.DatabaseType) *dropQueryManager {
 	return &dropQueryManager{
 		logger:             logger,
 		executeStringQuery: executor,
+		db:                 db,
 	}
 }
 
@@ -72,7 +75,7 @@ func (v *dropQueryManager) DropVerticesByString(q string) error {
 	if !strings.HasSuffix(q, "drop()") {
 		q += ".drop()"
 	}
-	
+
 	_, err := v.executeStringQuery(q)
 	if err != nil {
 		v.logger.Error("invalid query",

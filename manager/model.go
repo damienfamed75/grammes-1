@@ -23,6 +23,7 @@ package manager
 import (
 	"encoding/json"
 
+	"github.com/northwesternmutual/grammes/internal/common"
 	"github.com/northwesternmutual/grammes/logging"
 	"github.com/northwesternmutual/grammes/model"
 	"github.com/northwesternmutual/grammes/query"
@@ -37,24 +38,23 @@ var (
 	jsonUnmarshal = json.Unmarshal
 	// nilVertex is used for returning nothing in
 	// a vertex related function.
-	nilVertex = model.Vertex{}
+	// nilVertex = model.Vertex{}
 )
 
 // unmarshalID will simply take a raw response and
 // unmarshal it into an ID.
-func unmarshalID(data [][]byte) (id int64, err error) {
-	var resp model.VertexList
+func unmarshalID(db common.DatabaseType, data [][]byte) (id model.ID, err error) {
+	var resp []model.Vertex
 
 	for _, res := range data {
-		var resPart model.VertexList
-		err = jsonUnmarshal(res, &resPart)
+		resPart, err := model.UnmarshalVertexList(db, res)
 		if err == nil {
-			if len(resp.Vertices) > 0 {
-				id = resp.Vertices[0].ID()
+			if len(resp) > 0 {
+				id = resp[0].ID()
 			}
 		}
 
-		resp.Vertices = append(resp.Vertices, resPart.Vertices...)
+		resp = append(resp, resPart...)
 	}
 
 	return id, err
@@ -79,11 +79,11 @@ type MiscQuerier interface {
 // SchemaQuerier handles all schema related queries to the graph.
 type SchemaQuerier interface {
 	// AddEdgeLabel adds a new edge label to the schema.
-	AddEdgeLabel(multi multiplicity.Multiplicity, label string) (id int64, err error)
+	AddEdgeLabel(multi multiplicity.Multiplicity, label string) (id model.ID, err error)
 	// AddEdgeLabels adds new edge labels to the schema.
-	AddEdgeLabels(multiplicityAndLabels ...interface{}) (ids []int64, err error)
+	AddEdgeLabels(multiplicityAndLabels ...interface{}) (ids []model.ID, err error)
 	// AddPropertyKey adds a new property key to the schema.
-	AddPropertyKey(label string, dt datatype.DataType, card cardinality.Cardinality) (id int64, err error)
+	AddPropertyKey(label string, dt datatype.DataType, card cardinality.Cardinality) (id model.ID, err error)
 	// CommitSchema will finalize your changes and apply them to the schema.
 	CommitSchema() (res [][]byte, err error)
 }
@@ -105,17 +105,15 @@ type GetVertexQuerier interface {
 // GetVertexIDQuerier holds functions to gather IDs from the graph.
 type GetVertexIDQuerier interface {
 	// VertexIDsByString returns a slice of IDs from a string query.
-	VertexIDsByString(stringQuery string) (ids []int64, err error)
+	VertexIDsByString(stringQuery string) (ids []model.ID, err error)
 	// VertexIDsByQuery returns a slice of IDs from a query object.
-	VertexIDsByQuery(queryObj query.Query) (ids []int64, err error)
+	VertexIDsByQuery(queryObj query.Query) (ids []model.ID, err error)
 	// VertexIDs returns a slice of IDs based on the label and properties.
-	VertexIDs(label string, properties ...interface{}) (ids []int64, err error)
+	VertexIDs(label string, properties ...interface{}) (ids []model.ID, err error)
 }
 
 // AddVertexQuerier are queries specific to adding vertices.
 type AddVertexQuerier interface {
-	// AddAPIVertex adds a vertex to the graph based on the API struct.
-	AddAPIVertex(api model.APIData) (vertex model.Vertex, err error)
 	// AddVertexByString adds a vertex to the graph using a string query.
 	AddVertexByString(stringQuery string) (vertex model.Vertex, err error)
 	// AddVertexLabels adds multiple labels to the graph.

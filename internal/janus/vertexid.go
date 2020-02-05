@@ -18,24 +18,25 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package model
+package janus
 
-import "encoding/json"
+import "github.com/northwesternmutual/grammes/internal/model"
 
-// IDList is used for unmarshalling after querying.
-// We use this instead of []ID for Gremlin v3.0 compatibility.
-type IDList struct {
-	listOfIDs List
-	IDs       []ID
+var (
+	_ model.ID = ID{}
+)
+
+// ID contains the data stores in the
+// 'ID' data including the type and Value
+type ID struct {
+	Type string `json:"@type"`
+	Val  int64  `json:"@value"`
 }
 
-// UnmarshalJSON overrides to assure a proper unmarshal.
-func (l *IDList) UnmarshalJSON(data []byte) error {
-	if err := json.Unmarshal(data, &l.listOfIDs); err == nil {
-		if data, err = json.Marshal(l.listOfIDs.Value); err != nil {
-			return err
-		}
-	}
+func (i ID) Value() []interface{} {
+	return []interface{}{i.Val}
+}
 
-	return json.Unmarshal(data, &l.IDs)
+func (i ID) ValueInt() int64 {
+	return i.Val
 }

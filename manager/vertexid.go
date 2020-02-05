@@ -24,6 +24,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/northwesternmutual/grammes/internal/common"
 	"github.com/northwesternmutual/grammes/query/traversal"
 
 	"github.com/northwesternmutual/grammes/gremerror"
@@ -33,20 +34,22 @@ import (
 )
 
 type vertexIDQueryManager struct {
+	db                 common.DatabaseType
 	logger             logging.Logger
 	executeStringQuery stringExecutor
 }
 
-func newVertexIDQueryManager(logger logging.Logger, executor stringExecutor) *vertexIDQueryManager {
+func newVertexIDQueryManager(logger logging.Logger, executor stringExecutor, db common.DatabaseType) *vertexIDQueryManager {
 	return &vertexIDQueryManager{
 		logger:             logger,
 		executeStringQuery: executor,
+		db:                 db,
 	}
 }
 
 // VertexIDsByString executes a string query and unmarshals the
 // IDs for the user.
-func (v *vertexIDQueryManager) VertexIDsByString(q string) ([]int64, error) {
+func (v *vertexIDQueryManager) VertexIDsByString(q string) ([]model.ID, error) {
 	if !strings.HasSuffix(q, ".id()") {
 		q += ".id()"
 	}
@@ -60,11 +63,10 @@ func (v *vertexIDQueryManager) VertexIDsByString(q string) ([]int64, error) {
 		return nil, err
 	}
 
-	var rawIDs model.IDList
+	var rawIDs []model.ID
 
 	for _, res := range responses {
-		var idPart model.IDList
-		err = jsonUnmarshal(res, &idPart)
+		idPart, err := model.UnmarshalIDList(v.db, res)
 		if err != nil {
 			v.logger.Error("id unmarshal",
 				gremerror.NewUnmarshalError("VertexIDs", res, err),
@@ -72,22 +74,16 @@ func (v *vertexIDQueryManager) VertexIDsByString(q string) ([]int64, error) {
 			return nil, err
 		}
 
-		rawIDs.IDs = append(rawIDs.IDs, idPart.IDs...)
+		rawIDs = append(rawIDs, idPart...)
 	}
 
-	var ids []int64
-
-	for _, id := range rawIDs.IDs {
-		ids = append(ids, id.Value)
-	}
-
-	return ids, nil
+	return rawIDs, nil
 }
 
 // VertexIDsByQuery will take a query and execute it. Then it will
 // run through and extract all the vertex IDs matching the
 // traversal and return them in an array of int64.
-func (v *vertexIDQueryManager) VertexIDsByQuery(query query.Query) ([]int64, error) {
+func (v *vertexIDQueryManager) VertexIDsByQuery(query query.Query) ([]model.ID, error) {
 	ids, err := v.VertexIDsByString(query.String())
 	if err != nil {
 		v.logger.Error("error gathering IDs",
@@ -100,7 +96,7 @@ func (v *vertexIDQueryManager) VertexIDsByQuery(query query.Query) ([]int64, err
 
 // VertexIDs takes the label and optional properties to retrieve
 // the IDs desired from the graph.
-func (v *vertexIDQueryManager) VertexIDs(label string, properties ...interface{}) ([]int64, error) {
+func (v *vertexIDQueryManager) VertexIDs(label string, properties ...interface{}) ([]model.ID, error) {
 	if len(properties)%2 != 0 {
 		v.logger.Error("number of parameters ["+strconv.Itoa(len(properties))+"]",
 			gremerror.NewGrammesError("VertexIDs", gremerror.ErrOddNumberOfParameters),

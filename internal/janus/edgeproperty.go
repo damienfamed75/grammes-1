@@ -18,26 +18,23 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package model
+package janus
 
-import (
-	"encoding/json"
-)
+// EdgeProperties need to be different than Vertex ones
+// because they're not an array/slice. It's only a map of
+// keys and values.
+type EdgeProperties map[interface{}]EdgePropertyDetails
 
-// PropertyList is used for unmarshalling after querying.
-// We use this instead of []Edge for Gremlin v3.0 compatibility.
-type PropertyList struct {
-	listOfProperties List
-	Properties       []Property
+// EdgePropertyDetails contains the details and
+// meta data about the property itself.
+type EdgePropertyDetails struct {
+	Type  string            `json:"@type"`
+	Value EdgePropertyValue `json:"@value"`
 }
 
-// UnmarshalJSON overrides to assure a proper unmarshal.
-func (l *PropertyList) UnmarshalJSON(data []byte) error {
-	if err := json.Unmarshal(data, &l.listOfProperties); err == nil {
-		if data, err = json.Marshal(l.listOfProperties.Value); err != nil {
-			return err
-		}
-	}
-
-	return json.Unmarshal(data, &l.Properties)
+// EdgePropertyValue will hold the actual
+// value and key for the property.
+type EdgePropertyValue struct {
+	Key   string       `json:"key"`
+	Value ValueWrapper `json:"value"`
 }

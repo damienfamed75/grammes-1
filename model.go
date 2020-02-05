@@ -29,9 +29,9 @@ var (
 	// NewWebSocketDialer returns websocket with established connection.
 	NewWebSocketDialer = gremconnect.NewWebSocketDialer
 	// NewVertex returns a vertex struct meant for adding it.
-	NewVertex = model.NewVertex
+	// NewVertex = model.NewVertex
 	// NewProperty returns a property struct meant for adding it to a vertex.
-	NewProperty = model.NewProperty
+	// NewProperty = model.NewProperty
 
 	// Unmarshal functions.
 
@@ -106,14 +106,6 @@ type Property = model.Property
 // have it as a slice of Property.
 type PropertyMap = model.PropertyMap
 
-// PropertyValue is used to get quick access
-// to the model.PropertyValue without having to
-// import it everywhere in the grammes package.
-//
-// PropertyValue contains the ID,
-// value, and label of this property's value.
-type PropertyValue = model.PropertyValue
-
 // ID is used to get quick access
 // to the model.ID without having to
 // import it everywhere in the grammes package.
@@ -121,50 +113,3 @@ type PropertyValue = model.PropertyValue
 // ID contains the data stores in the
 // 'ID' data including the type and Value
 type ID = model.ID
-
-// APIData is used to get quick access
-// to the model.APIData without having to
-// import it everywhere in the grammes package.
-//
-// APIData holds the request in which
-// you can make a query with using
-// the Grammes library.
-type APIData = model.APIData
-
-// Data is used to get quick access
-// to the model.Data without having to
-// import it everywhere in the grammes package.
-//
-// Data holds basic information
-// such as the label, name, ID, and properties
-// of what this is being associated with.
-type Data = model.Data
-
-// VertexList is used to get quick access
-// to the model.VertexList without having to
-// import it everywhere in the grammes package.
-type VertexList = model.VertexList
-
-// EdgeList is used to get quick access
-// to the model.EdgeList without having to
-// import it everywhere in the grammes package.
-type EdgeList = model.EdgeList
-
-// IDList is used to get quick access
-// to the model.IDList without having to
-// import it everywhere in the grammes package.
-type IDList = model.IDList
-
-// PropertyList is used to get quick access
-// to the model.PropertyList without having to
-// import it everywhere in the grammes package.
-type PropertyList = model.PropertyList
-
-// SimpleValue is used to get quick access
-// to the model.SimpleValue without having to
-// import it everywhere in the grammes package.
-//
-// SimpleValue is used to unmarshal simple value responses
-// from the TinkerPop server. These can include simple datatypes
-// like Int, String, Double, Bool, etc.
-type SimpleValue = model.SimpleValue

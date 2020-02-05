@@ -48,7 +48,7 @@ func main() {
 	}
 
 	// Create a new Grammes client with a standard websocket.
-	client, err := grammes.DialWithWebSocket(addr)
+	client, err := grammes.DialWithWebSocket(addr, grammes.JanusGraph)
 	if err != nil {
 		logger.Fatal("Couldn't create client", zap.Error(err))
 	}

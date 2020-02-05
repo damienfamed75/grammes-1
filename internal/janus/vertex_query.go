@@ -18,11 +18,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package model
+package janus
 
 import (
 	"github.com/northwesternmutual/grammes/gremerror"
-
+	"github.com/northwesternmutual/grammes/internal/common"
+	"github.com/northwesternmutual/grammes/internal/model"
 	"github.com/northwesternmutual/grammes/query/traversal"
 )
 
@@ -30,7 +31,7 @@ var newTrav = traversal.NewTraversal
 
 // QueryRefresh gets the vertex from the graph
 // and refreshes its values to match.
-func (v *Vertex) QueryRefresh(client queryClient) error {
+func (v *Vertex) QueryRefresh(client common.QueryClient) error {
 	if client == nil {
 		return gremerror.NewGrammesError("QueryRefresh", gremerror.ErrNilClient)
 	}
@@ -61,7 +62,7 @@ func (v *Vertex) QueryRefresh(client queryClient) error {
 
 // QueryBothEdges will execute bothE() on this vertex for you
 // without having to make another lengthy call to ExecuteQuery.
-func (v *Vertex) QueryBothEdges(client queryClient, labels ...string) ([]Edge, error) {
+func (v *Vertex) QueryBothEdges(client common.QueryClient, labels ...string) ([]model.Edge, error) {
 	if client == nil {
 		return nil, gremerror.NewGrammesError("QueryBothEdges", gremerror.ErrNilClient)
 	}
@@ -81,12 +82,12 @@ func (v *Vertex) QueryBothEdges(client queryClient, labels ...string) ([]Edge, e
 
 	edges.Edges = edgeList
 
-	return edges.Edges, nil
+	return edges.Interface(), nil
 }
 
 // QueryOutEdges will execute outE() on this vertex for you
 // without having to make another lengthy call to ExecuteQuery.
-func (v *Vertex) QueryOutEdges(client queryClient, labels ...string) ([]Edge, error) {
+func (v *Vertex) QueryOutEdges(client common.QueryClient, labels ...string) ([]model.Edge, error) {
 	if client == nil {
 		return nil, gremerror.NewGrammesError("QueryOutEdges", gremerror.ErrNilClient)
 	}
@@ -104,12 +105,12 @@ func (v *Vertex) QueryOutEdges(client queryClient, labels ...string) ([]Edge, er
 
 	edges.Edges = edgeList
 
-	return edges.Edges, nil
+	return edges.Interface(), nil
 }
 
 // QueryInEdges will execute inE() on this vertex for you
 // without having to make another lengthy call to ExecuteQuery.
-func (v *Vertex) QueryInEdges(client queryClient, labels ...string) ([]Edge, error) {
+func (v *Vertex) QueryInEdges(client common.QueryClient, labels ...string) ([]model.Edge, error) {
 	if client == nil {
 		return nil, gremerror.NewGrammesError("QueryInEdges", gremerror.ErrNilClient)
 	}
@@ -129,21 +130,21 @@ func (v *Vertex) QueryInEdges(client queryClient, labels ...string) ([]Edge, err
 
 	edges.Edges = edgeList
 
-	return edges.Edges, nil
+	return edges.Interface(), nil
 }
 
-// AddEdge adds an outgoing edge from this Vertex object to
+// QueryAddEdge adds an outgoing edge from this Vertex object to
 // another Vertex object via its unique ID.
-func (v *Vertex) AddEdge(client queryClient, label string, outVID int64, properties ...interface{}) (Edge, error) {
+func (v *Vertex) QueryAddEdge(client common.QueryClient, label string, outVID interface{}, properties ...interface{}) (model.Edge, error) {
 	if client == nil {
-		return Edge{}, gremerror.NewGrammesError("AddEdge", gremerror.ErrNilClient)
+		return nil, gremerror.NewGrammesError("AddEdge", gremerror.ErrNilClient)
 	}
 
 	var query = newTrav().V().HasID(v.ID()).AddE(label).To(newTrav().V().HasID(outVID).Raw())
 	// query := fmt.Sprintf("g.V().hasId(%v).addE(\"%s\").to(V().hasId(%v))", v.ID(), label, outVID)
 
 	if len(properties)%2 != 0 {
-		return Edge{}, gremerror.NewGrammesError("AddEdge", gremerror.ErrOddNumberOfParameters)
+		return nil, gremerror.NewGrammesError("AddEdge", gremerror.ErrOddNumberOfParameters)
 	}
 
 	if len(properties) > 0 {
@@ -155,26 +156,26 @@ func (v *Vertex) AddEdge(client queryClient, label string, outVID int64, propert
 	// Execute the built command.
 	responses, err := client.ExecuteQuery(query)
 	if err != nil {
-		return Edge{}, gremerror.NewQueryError("AddEdge", query.String(), err)
+		return nil, gremerror.NewQueryError("AddEdge", query.String(), err)
 	}
 
 	var edges EdgeList
 	edgeList, err := UnmarshalEdgeList(responses)
 	if err != nil {
-		return Edge{}, err
+		return nil, err
 	}
 
 	edges.Edges = edgeList
 
 	if len(edges.Edges) == 0 {
-		return Edge{}, gremerror.NewGrammesError("AddEdge", gremerror.ErrEmptyResponse)
+		return nil, gremerror.NewGrammesError("AddEdge", gremerror.ErrEmptyResponse)
 	}
 
-	return edges.Edges[0], nil
+	return &edges.Edges[0], nil
 }
 
-// Drop will drop the current vertex that's being called from.
-func (v *Vertex) Drop(client queryClient) error {
+// QueryDrop will drop the current vertex that's being called from.
+func (v *Vertex) QueryDrop(client common.QueryClient) error {
 	if client == nil {
 		return gremerror.NewGrammesError("Drop", gremerror.ErrNilClient)
 	}
@@ -184,8 +185,8 @@ func (v *Vertex) Drop(client queryClient) error {
 	return err
 }
 
-// DropProperties drops the properties from the vertex so they don't exist.
-func (v *Vertex) DropProperties(client queryClient, properties ...string) error {
+// QueryDropProperties drops the properties from the vertex so they don't exist.
+func (v *Vertex) QueryDropProperties(client common.QueryClient, properties ...interface{}) error {
 	if client == nil {
 		return gremerror.NewGrammesError("DropProperties", gremerror.ErrNilClient)
 	}
@@ -198,9 +199,9 @@ func (v *Vertex) DropProperties(client queryClient, properties ...string) error 
 	return v.QueryRefresh(client)
 }
 
-// AddProperty will add a property to the vertex in the graph and return a
+// QueryAddProperty will add a property to the vertex in the graph and return a
 // new version of the vertex with the property added to it in the structure.
-func (v *Vertex) AddProperty(client queryClient, key string, value interface{}) error {
+func (v *Vertex) QueryAddProperty(client common.QueryClient, key, value interface{}) error {
 	if client == nil {
 		return gremerror.NewGrammesError("AddProperty", gremerror.ErrNilClient)
 	}

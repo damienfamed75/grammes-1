@@ -22,74 +22,81 @@ package model
 
 import (
 	"encoding/json"
+	"fmt"
 
-	"github.com/northwesternmutual/grammes/gremerror"
+	"github.com/northwesternmutual/grammes/internal/common"
+	"github.com/northwesternmutual/grammes/internal/janus"
+	"github.com/northwesternmutual/grammes/internal/model"
 )
 
-// UnmarshalVertexList is a utility to unmarshal a list
-// or array of vertices properly.
-func UnmarshalVertexList(data [][]byte) ([]Vertex, error) {
-	var list []Vertex
+// UnmarshalVertexList returns a slice of Vertices.
+func UnmarshalVertexList(db common.DatabaseType, data []byte) ([]model.Vertex, error) {
+	switch db {
+	case common.JanusGraph:
+		var l janus.VertexList
 
-	for _, res := range data {
-		var listPart VertexList
-		if err := json.Unmarshal(res, &listPart); err != nil {
-			return nil, gremerror.NewUnmarshalError("UnmarshalVertexList", res, err)
+		if err := json.Unmarshal(data, &l); err != nil {
+			return nil, fmt.Errorf("unmarshal error: %w", err)
 		}
 
-		list = append(list, listPart.Vertices...)
+		return l.Interface(), nil
+	case common.Cosmos:
+		//TODO
 	}
 
-	return list, nil
+	return nil, fmt.Errorf("no database found: %s", db)
 }
 
-// UnmarshalEdgeList is a utility to unmarshal a list
-// or array of edges properly.
-func UnmarshalEdgeList(data [][]byte) ([]Edge, error) {
-	var list []Edge
+// UnmarshalEdgeList returns a slice of Edges.
+func UnmarshalEdgeList(db common.DatabaseType, data []byte) ([]model.Edge, error) {
+	switch db {
+	case common.JanusGraph:
+		var l janus.EdgeList
 
-	for _, res := range data {
-		var listPart EdgeList
-		if err := json.Unmarshal(res, &listPart); err != nil {
-			return nil, gremerror.NewUnmarshalError("UnmarshalEdgeList", res, err)
+		if err := json.Unmarshal(data, &l); err != nil {
+			return nil, fmt.Errorf("unmarshal error: %w", err)
 		}
 
-		list = append(list, listPart.Edges...)
+		return l.Interface(), nil
+	case common.Cosmos:
+		//TODO
 	}
 
-	return list, nil
+	return nil, fmt.Errorf("no database found: %s", db)
 }
 
-// UnmarshalIDList is a utility to unmarshal a list
-// or array of IDs properly.
-func UnmarshalIDList(data [][]byte) ([]ID, error) {
-	var list []ID
+// UnmarshalPropertyList returns a slice of Edges.
+func UnmarshalPropertyList(db common.DatabaseType, data []byte) ([]model.Property, error) {
+	switch db {
+	case common.JanusGraph:
+		var l janus.PropertyList
 
-	for _, res := range data {
-		var listPart IDList
-		if err := json.Unmarshal(res, &listPart); err != nil {
-			return nil, gremerror.NewUnmarshalError("UnmarshalIDList", res, err)
+		if err := json.Unmarshal(data, &l); err != nil {
+			return nil, fmt.Errorf("unmarshal error: %w", err)
 		}
 
-		list = append(list, listPart.IDs...)
+		return l.Interface(), nil
+	case common.Cosmos:
+		//TODO
 	}
 
-	return list, nil
+	return nil, fmt.Errorf("no database found: %s", db)
 }
 
-// UnmarshalPropertyList is a utility to unmarshal a list
-// or array of IDs properly.
-func UnmarshalPropertyList(data [][]byte) ([]Property, error) {
-	var list []Property
+// UnmarshalIDList returns a slice of Edges.
+func UnmarshalIDList(db common.DatabaseType, data []byte) ([]model.ID, error) {
+	switch db {
+	case common.JanusGraph:
+		var l janus.IDList
 
-	for _, res := range data {
-		var listPart PropertyList
-		if err := json.Unmarshal(res, &listPart); err != nil {
-			return nil, gremerror.NewUnmarshalError("UnmarshalIDList", res, err)
+		if err := json.Unmarshal(data, &l); err != nil {
+			return nil, fmt.Errorf("unmarshal error: %w", err)
 		}
 
-		list = append(list, listPart.Properties...)
+		return l.Interface(), nil
+	case common.Cosmos:
+		//TODO
 	}
 
-	return list, nil
+	return nil, fmt.Errorf("no database found: %s", db)
 }

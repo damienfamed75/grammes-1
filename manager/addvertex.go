@@ -23,9 +23,11 @@ package manager
 import (
 	"strconv"
 
-	"github.com/northwesternmutual/grammes/gremerror"
-	"github.com/northwesternmutual/grammes/logging"
 	"github.com/northwesternmutual/grammes/model"
+
+	"github.com/northwesternmutual/grammes/gremerror"
+	"github.com/northwesternmutual/grammes/internal/common"
+	"github.com/northwesternmutual/grammes/logging"
 	"github.com/northwesternmutual/grammes/query"
 	"github.com/northwesternmutual/grammes/query/traversal"
 )
@@ -33,31 +35,15 @@ import (
 type addVertexQueryManager struct {
 	logger             logging.Logger
 	executeStringQuery stringExecutor
+	db                 common.DatabaseType
 }
 
-func newAddVertexQueryManager(logger logging.Logger, executeString stringExecutor) *addVertexQueryManager {
+func newAddVertexQueryManager(logger logging.Logger, executeString stringExecutor, db common.DatabaseType) *addVertexQueryManager {
 	return &addVertexQueryManager{
 		logger:             logger,
 		executeStringQuery: executeString,
+		db:                 db,
 	}
-}
-
-// AddAPIVertex is used for adding a vertex to the graph with an available
-// API object if you want to create it in a struct format rather than a command.
-func (v *addVertexQueryManager) AddAPIVertex(data model.APIData) (model.Vertex, error) {
-	query := traversal.NewTraversal().AddV(data.Label)
-	// Add properties to the vertex based on the API.
-	for k, v := range data.Properties {
-		query.AddStep("property", k, v)
-	}
-
-	addedVertex, err := v.AddVertexByString(query.String())
-	if err != nil {
-		v.logger.Error("AddAPIVertex: invalid query adding vertex", err)
-		return addedVertex, err
-	}
-
-	return addedVertex, nil
 }
 
 // AddVertexByStruct will take a Vertex struct and create
@@ -66,10 +52,10 @@ func (v *addVertexQueryManager) AddAPIVertex(data model.APIData) (model.Vertex, 
 func (v *addVertexQueryManager) AddVertexByStruct(vertex model.Vertex) (model.Vertex, error) {
 	var properties []interface{}
 
-	for key, vals := range vertex.Value.Properties {
+	for key, vals := range vertex.Value().Properties() {
 		properties = append(properties, key)
-		for _, val := range vals {
-			properties = append(properties, val.Value.Value.Value)
+		for _, property := range vals {
+			properties = append(properties, property.Value())
 		}
 	}
 
@@ -95,7 +81,7 @@ func (v *addVertexQueryManager) AddVertex(label string, properties ...interface{
 		v.logger.Error("number of parameters ["+strconv.Itoa(len(properties))+"]",
 			gremerror.NewGrammesError("AddVertex", gremerror.ErrOddNumberOfParameters),
 		)
-		return nilVertex, gremerror.ErrOddNumberOfParameters
+		return nil, gremerror.ErrOddNumberOfParameters
 	}
 
 	// Begin the command with signature and label.
@@ -139,27 +125,27 @@ func (v *addVertexQueryManager) AddVertexByString(query string) (model.Vertex, e
 		v.logger.Error("invalid query",
 			gremerror.NewQueryError("AddVertexByString", query, err),
 		)
-		return nilVertex, err
+		return nil, err
 	}
 
-	var list model.VertexList
-
+	var list []model.Vertex
 	for _, res := range responses {
-		var vertPart model.VertexList
 		// Create the resulting vertices from the query.
-		err = jsonUnmarshal(res, &vertPart)
+		l, err := model.UnmarshalVertexList(v.db, res)
 		if err != nil {
 			v.logger.Error("vertices unmarshal",
 				gremerror.NewUnmarshalError("AddVertexByString", res, err),
 			)
-			return nilVertex, err
+			return nil, err
 		}
 
-		list.Vertices = append(list.Vertices, vertPart.Vertices...)
+		list = append(list, l...)
 	}
 
-	if len(list.Vertices) > 0 {
-		return list.Vertices[0], nil
+	if len(list) > 0 {
+		return list[0], nil
 	}
-	return nilVertex, nil
+
+	// TODO add new gremerror for nothing found.
+	return nil, nil
 }

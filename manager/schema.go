@@ -24,7 +24,9 @@ import (
 	"fmt"
 
 	"github.com/northwesternmutual/grammes/gremerror"
+	"github.com/northwesternmutual/grammes/internal/common"
 	"github.com/northwesternmutual/grammes/logging"
+	"github.com/northwesternmutual/grammes/model"
 	"github.com/northwesternmutual/grammes/query/cardinality"
 	"github.com/northwesternmutual/grammes/query/datatype"
 	"github.com/northwesternmutual/grammes/query/graph"
@@ -32,21 +34,23 @@ import (
 )
 
 type schemaManager struct {
+	db                 common.DatabaseType
 	logger             logging.Logger
 	executeStringQuery stringExecutor
 }
 
-func newSchemaManager(logger logging.Logger, executor stringExecutor) *schemaManager {
+func newSchemaManager(logger logging.Logger, executor stringExecutor, db common.DatabaseType) *schemaManager {
 	return &schemaManager{
 		logger:             logger,
 		executeStringQuery: executor,
+		db:                 db,
 	}
 }
 
 // AddEdgeLabel adds the edge label to the
 // graph directly. This method returns the schema id
 // of the edge label added.
-func (s *schemaManager) AddEdgeLabel(multi multiplicity.Multiplicity, label string) (id int64, err error) {
+func (s *schemaManager) AddEdgeLabel(multi multiplicity.Multiplicity, label string) (id model.ID, err error) {
 	var (
 		data  [][]byte
 		query = graph.NewGraph().OpenManagement().MakeEdgeLabel(label).Multiplicity(multi).Make()
@@ -59,7 +63,7 @@ func (s *schemaManager) AddEdgeLabel(multi multiplicity.Multiplicity, label stri
 		return
 	}
 
-	if id, err = unmarshalID(data); err != nil {
+	if id, err = unmarshalID(s.db, data); err != nil {
 		s.logger.Error("id unmarshal",
 			gremerror.NewUnmarshalError("AddEdgeLabel", data[0], err),
 		)
@@ -78,7 +82,7 @@ func (s *schemaManager) AddEdgeLabel(multi multiplicity.Multiplicity, label stri
 // but with the ability to do multiple labels at a
 // time. This function is called similarly to your
 // favorite logger.
-func (s *schemaManager) AddEdgeLabels(multiplicityAndLabels ...interface{}) (ids []int64, err error) {
+func (s *schemaManager) AddEdgeLabels(multiplicityAndLabels ...interface{}) (ids []model.ID, err error) {
 	if len(multiplicityAndLabels)%2 != 0 {
 		s.logger.Error(fmt.Sprintf("number of parameters [%d]", len(multiplicityAndLabels)),
 			gremerror.NewGrammesError("AddEdgeLabels", gremerror.ErrOddNumberOfParameters),
@@ -89,7 +93,7 @@ func (s *schemaManager) AddEdgeLabels(multiplicityAndLabels ...interface{}) (ids
 	var (
 		multi multiplicity.Multiplicity
 		label string
-		id    int64
+		id    model.ID
 		ok    bool
 	)
 
@@ -112,7 +116,7 @@ func (s *schemaManager) AddEdgeLabels(multiplicityAndLabels ...interface{}) (ids
 // AddPropertyKey adds the edge label to the
 // graph directly. This method returns the schema id
 // of the edge label added.
-func (s *schemaManager) AddPropertyKey(propertyName string, datatype datatype.DataType, cardinality cardinality.Cardinality) (id int64, err error) {
+func (s *schemaManager) AddPropertyKey(propertyName string, datatype datatype.DataType, cardinality cardinality.Cardinality) (id model.ID, err error) {
 	var (
 		data  [][]byte
 		query = graph.NewGraph().OpenManagement().MakePropertyKey(propertyName, datatype, cardinality).Make()
@@ -124,7 +128,7 @@ func (s *schemaManager) AddPropertyKey(propertyName string, datatype datatype.Da
 		)
 		return
 	}
-	if id, err = unmarshalID(data); err != nil {
+	if id, err = unmarshalID(s.db, data); err != nil {
 		s.logger.Error("id unmarshal",
 			gremerror.NewUnmarshalError("AddPropertyKey", data[0], err),
 		)

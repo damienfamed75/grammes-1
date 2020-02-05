@@ -18,32 +18,32 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package quick
+package janus
 
-import (
-	"github.com/northwesternmutual/grammes/query"
+import "github.com/northwesternmutual/grammes/internal/model"
+
+var (
+	_ model.ID = EdgeID{}
 )
 
-// ExecuteQuery is used to execute a query
-// to a gremlin server without having a client already
-// created. For example you can use this if you are making
-// quick small changes across multiple packages.
-func ExecuteQuery(host string, query query.Query) ([][]byte, error) {
-	// Store the query into a string.
-	strQuery := query.String()
-
-	// Execute the query.
-	res, err := ExecuteStringQuery(host, strQuery)
-
-	return res, err
+// EdgeID is the main wrapper struct
+// that holds the type and ID itself.
+type EdgeID struct {
+	Type string         `json:"@type"`
+	Val  EdgeRelationID `json:"@value"`
 }
 
-// ExecuteStringQuery is used to execute a query
-// via a string to a gremlin server without have a client
-// already created. For example this can be used if you are
-// altering a graph through various packages.
-func ExecuteStringQuery(host, query string) ([][]byte, error) {
-	res, err := executeQuery(host, query)
+func (i EdgeID) Value() []interface{} {
+	return []interface{}{i.Val.RelationID}
+}
 
-	return res, err
+func (i EdgeID) ValueInt() int64 {
+	return -1
+}
+
+// EdgeRelationID contains the ID of the
+// edge and its relationship status between
+// vertices.
+type EdgeRelationID struct {
+	RelationID string `json:"relationId"`
 }
